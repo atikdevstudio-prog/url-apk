@@ -248,8 +248,8 @@ HELP_TEXT = (
 
 ABOUT_TEXT = (
     "<b>ℹ️ About APK Converter Studio</b>\n\n"
-    "A clean Telegram interface around the APK CreatorX build API[span_1].\n\n"
-    "<b>Supported:</b> URLs, HTML, ZIP, Toolbar Customization, PNG, JPEG[span_2]\n"
+    "A clean Telegram interface around the APK CreatorX build API[span_0](start_span)[span_0](end_span).\n\n"
+    "<b>Supported:</b> URLs, HTML, ZIP, Toolbar Customization, PNG, JPEG[span_1](start_span)[span_1](end_span)\n"
     "<b>Output:</b> Android 6.0+ test APK"
 )
 
@@ -434,7 +434,7 @@ def step_toolbar_input(message):
             sessions[chat_id]["toolbar_color"] = parts[1].strip()
         else:
             sessions[chat_id]["toolbar_title"] = text
-            sessions[chat_id]["toolbar_color"] = "#10162d"  # Default color
+            sessions[chat_id]["toolbar_color"] = "#10162d"
             
     flow_next(chat_id, progress(3, "Icon") + "🖼️ <b>Upload your app icon</b>\n\nSend a non-interlaced PNG or JPEG (max 6 MiB, 4 megapixels).", step_icon_file)
 
@@ -528,7 +528,6 @@ def build_apk(chat_id):
     
     data = {"app_name": app_name}
     
-    # টুলবার কনফিগারেশন যোগ করা (যদি ইউজার দিয়ে থাকে)
     if "toolbar_title" in session:
         data["toolbar_title"] = session["toolbar_title"]
     if "toolbar_color" in session:
