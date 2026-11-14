@@ -98,9 +98,9 @@ def kb_confirm():
 
 
 def progress(step, label):
-    labels = ["App name", "Website/URL", "Icon", "Review", "Build"]
-    cells = ["✅" if i < step else ("🔵" if i == step else "⚪") for i in range(5)]
-    return f"<b>Step {step + 1}/5 — {label}</b>\n{'  '.join(cells)}\n"
+    labels = ["App name", "Website/URL", "Toolbar", "Icon", "Review", "Build"]
+    cells = ["✅" if i < step else ("🔵" if i == step else "⚪") for i in range(6)]
+    return f"<b>Step {step + 1}/6 — {label}</b>\n{'  '.join(cells)}\n"
 
 
 def reset(chat_id):
@@ -148,7 +148,7 @@ def send_home(chat_id, intro=True):
         "<b>APK Converter Studio</b>\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "🌐 Website/URL → 📱 Android APK\n\n"
-        "Convert an HTML website, ZIP project, or direct URL into a test APK in a few simple steps.\n\n"
+        "Convert an HTML website, ZIP project, or direct URL into a test APK with custom Toolbar settings.\n\n"
         "<i>Fast • Simple • Test-build ready</i>"
         if intro else
         "<b>APK Converter Studio</b>\n\nChoose an action below to continue:"
@@ -158,13 +158,6 @@ def send_home(chat_id, intro=True):
             bot.send_photo(chat_id, photo, caption=text, reply_markup=kb_main_menu())
     else:
         bot.send_message(chat_id, text, reply_markup=kb_main_menu())
-
-
-def edit_status(chat_id, message_id, text, markup=None):
-    try:
-        bot.edit_message_text(text, chat_id, message_id, reply_markup=markup)
-    except Exception as exc:
-        logger.debug("Could not edit status message: %s", exc)
 
 
 def flow_screen(chat_id, text, markup=None, source=None):
@@ -217,11 +210,11 @@ def api_error_message(resp):
 def animate_build(message, stop_event):
     frames = ["◐", "◓", "◑", "◒"]
     stages = [
-        ("Uploading website/URL", "📤", 25),
-        ("Preparing WebView", "🧩", 45),
-        ("Compiling Android package", "⚙️", 70),
-        ("Signing test build", "🔐", 88),
-        ("Finalizing APK", "📦", 96),
+        ("Uploading website/URL", "📤", 20),
+        ("Configuring Toolbar", "🎨", 40),
+        ("Preparing WebView", "🧩", 60),
+        ("Compiling Android package", "⚙️", 80),
+        ("Finalizing APK", "📦", 95),
     ]
     index = 0
     while not stop_event.is_set():
@@ -245,19 +238,19 @@ def animate_build(message, stop_event):
 HELP_TEXT = (
     "<b>📘 How it works</b>\n\n"
     "<b>1.</b> Choose <b>Create APK</b>\n"
-    "<b>2.</b> Enter an app name (up to 80 UTF-16 units / 120 UTF-8 bytes)\n"
-    "<b>3.</b> Send a website URL (e.g. <code>https://example.com</code>) OR upload an <code>.html</code>/<code>.zip</code> file (up to 10 MiB)\n"
-    "<b>4.</b> Upload a non-interlaced PNG/JPEG icon (up to 6 MiB, 4 MP)\n"
-    "<b>5.</b> Review and build\n\n"
-    "⚠️ Builds are for testing only. Each APK uses a new temporary signing key and cannot update an earlier build."
+    "<b>2.</b> Enter an app name\n"
+    "<b>3.</b> Send website URL or HTML/ZIP file\n"
+    "<b>4.</b> Set Toolbar Title & Color (e.g. <code>My App:#665cff</code> or send <code>skip</code>)\n"
+    "<b>5.</b> Upload an app icon (PNG/JPEG)\n"
+    "<b>6.</b> Review and build\n\n"
+    "⚠️ Builds are for testing only."
 )
 
 ABOUT_TEXT = (
     "<b>ℹ️ About APK Converter Studio</b>\n\n"
-    "A clean Telegram interface around the APK CreatorX build API[span_1](start_span)[span_1](end_span).\n\n"
-    "<b>Supported:</b> URLs, HTML, HTM, ZIP, PNG, JPEG[span_2](start_span)[span_2](end_span)\n"
-    "<b>Output:</b> Android 6.0+ test APK\n\n"
-    "<i>Always test the generated APK on a real device.</i>"
+    "A clean Telegram interface around the APK CreatorX build API[span_1].\n\n"
+    "<b>Supported:</b> URLs, HTML, ZIP, Toolbar Customization, PNG, JPEG[span_2]\n"
+    "<b>Output:</b> Android 6.0+ test APK"
 )
 
 
@@ -289,19 +282,9 @@ def cb_home(call):
     bot.answer_callback_query(call.id)
     text = "<b>APK Converter Studio</b>\n\nChoose an action below to continue:"
     if call.message.content_type == "photo":
-        bot.edit_message_caption(
-            text,
-            call.message.chat.id,
-            call.message.message_id,
-            reply_markup=kb_main_menu(),
-        )
+        bot.edit_message_caption(text, call.message.chat.id, call.message.message_id, reply_markup=kb_main_menu())
     else:
-        bot.edit_message_text(
-            text,
-            call.message.chat.id,
-            call.message.message_id,
-            reply_markup=kb_main_menu(),
-        )
+        bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=kb_main_menu())
 
 
 @bot.callback_query_handler(func=lambda c: c.data == "menu:help")
@@ -361,7 +344,7 @@ def cb_build(call):
         return
     bot.answer_callback_query(call.id, "Build started")
     sessions[chat_id]["ui_message"] = call.message
-    flow_screen(chat_id, progress(4, "Building") + "⚙️ <b>Preparing your APK…</b>\n\n<i>This may take up to two minutes.</i>", source=call.message)
+    flow_screen(chat_id, progress(5, "Building") + "⚙️ <b>Preparing your APK…</b>\n\n<i>This may take up to two minutes.</i>", source=call.message)
     threading.Thread(target=build_apk, args=(chat_id,), daemon=True).start()
 
 
@@ -413,18 +396,47 @@ def step_website_input(message):
         
         sessions[chat_id]["html"] = (filename, content)
         sessions[chat_id]["is_url"] = False
-        flow_next(chat_id, progress(2, "Icon") + f"✅ Website file received: <code>{escape(filename)}</code>\n\n🖼️ <b>Upload your app icon</b>\nSend a non-interlaced PNG or JPEG (max 6 MiB, 4 megapixels).", step_icon_file)
+        ask_toolbar(chat_id)
 
     elif message.text:
         text_input = message.text.strip()
         if text_input.startswith("http://") or text_input.startswith("https://"):
             sessions[chat_id]["url"] = text_input
             sessions[chat_id]["is_url"] = True
-            flow_next(chat_id, progress(2, "Icon") + f"✅ URL received: <code>{escape(text_input)}</code>\n\n🖼️ <b>Upload your app icon</b>\nSend a non-interlaced PNG or JPEG (max 6 MiB, 4 megapixels).", step_icon_file)
+            ask_toolbar(chat_id)
         else:
             flow_next(chat_id, progress(1, "Website/URL") + "⚠️ <b>Invalid input</b>\n\nPlease send a valid website URL (starting with http:// or https://) or upload an HTML/ZIP file:", step_website_input)
     else:
         flow_next(chat_id, progress(1, "Website/URL") + "⚠️ <b>Website or URL required</b>\n\nSend a website URL or upload a file:", step_website_input)
+
+
+def ask_toolbar(chat_id):
+    text = (
+        progress(2, "Toolbar") +
+        "🎨 <b>Configure Toolbar (Optional)</b>\n\n"
+        "Send your toolbar title and background color in this format:\n"
+        "<code>Title | #HexColor</code>\n"
+        "<i>Example: My Website | #665cff</i>\n\n"
+        "Or type <b>skip</b> to use default settings."
+    )
+    flow_next(chat_id, text, step_toolbar_input)
+
+
+def step_toolbar_input(message):
+    chat_id = message.chat.id
+    if chat_id not in sessions:
+        return
+    text = (message.text or "").strip()
+    if text.lower() != "skip":
+        if "|" in text:
+            parts = text.split("|", 1)
+            sessions[chat_id]["toolbar_title"] = parts[0].strip()
+            sessions[chat_id]["toolbar_color"] = parts[1].strip()
+        else:
+            sessions[chat_id]["toolbar_title"] = text
+            sessions[chat_id]["toolbar_color"] = "#10162d"  # Default color
+            
+    flow_next(chat_id, progress(3, "Icon") + "🖼️ <b>Upload your app icon</b>\n\nSend a non-interlaced PNG or JPEG (max 6 MiB, 4 megapixels).", step_icon_file)
 
 
 def step_icon_file(message):
@@ -437,30 +449,30 @@ def step_icon_file(message):
         filename = doc.file_name or "icon.png"
         ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
         if ext not in ("png", "jpg", "jpeg"):
-            flow_next(chat_id, progress(2, "Icon") + "⚠️ <b>Unsupported icon</b>\n\nPlease send a PNG or JPEG:", step_icon_file)
+            flow_next(chat_id, progress(3, "Icon") + "⚠️ <b>Unsupported icon</b>\n\nPlease send a PNG or JPEG:", step_icon_file)
             return
         if doc.file_size and doc.file_size > MAX_ICON_SIZE:
-            flow_next(chat_id, progress(2, "Icon") + "⚠️ <b>Icon is too large</b>\n\nMaximum size is 6 MiB. Send a smaller icon:", step_icon_file)
+            flow_next(chat_id, progress(3, "Icon") + "⚠️ <b>Icon is too large</b>\n\nMaximum size is 6 MiB. Send a smaller icon:", step_icon_file)
             return
         file_id = doc.file_id
     elif message.photo:
         file_id = message.photo[-1].file_id
     else:
-        flow_next(chat_id, progress(2, "Icon") + "⚠️ <b>Icon required</b>\n\nPlease send a PNG or JPEG image:", step_icon_file)
+        flow_next(chat_id, progress(3, "Icon") + "⚠️ <b>Icon required</b>\n\nPlease send a PNG or JPEG image:", step_icon_file)
         return
     try:
         info = bot.get_file(file_id)
         content = bot.download_file(info.file_path)
     except Exception as exc:
         logger.exception("Icon download failed")
-        flow_next(chat_id, progress(2, "Icon") + f"⚠️ <b>Icon download failed</b>\n\n{escape(str(exc))}\n\nPlease try again:", step_icon_file)
+        flow_next(chat_id, progress(3, "Icon") + f"⚠️ <b>Icon download failed</b>\n\n{escape(str(exc))}\n\nPlease try again:", step_icon_file)
         return
     if len(content) > MAX_ICON_SIZE:
-        flow_next(chat_id, progress(2, "Icon") + "⚠️ <b>Icon is too large</b>\n\nMaximum size is 6 MiB. Send a smaller icon:", step_icon_file)
+        flow_next(chat_id, progress(3, "Icon") + "⚠️ <b>Icon is too large</b>\n\nMaximum size is 6 MiB. Send a smaller icon:", step_icon_file)
         return
     icon_error = validate_icon(content)
     if icon_error:
-        flow_next(chat_id, progress(2, "Icon") + f"⚠️ <b>Invalid icon</b>\n\n{escape(icon_error)}\n\nPlease send another PNG or JPEG:", step_icon_file)
+        flow_next(chat_id, progress(3, "Icon") + f"⚠️ <b>Invalid icon</b>\n\n{escape(icon_error)}\n\nPlease send another PNG or JPEG:", step_icon_file)
         return
         
     is_url = sessions[chat_id].get("is_url", False)
@@ -486,10 +498,15 @@ def show_confirmation(chat_id):
         html_name, html_bytes = session["html"]
         source_info = f"📄 <b>Website File:</b> <code>{escape(html_name)}</code> ({len(html_bytes):,} bytes)"
 
+    toolbar_info = "Default / None"
+    if "toolbar_title" in session:
+        toolbar_info = f"{escape(session['toolbar_title'])} (Color: <code>{escape(session.get('toolbar_color', '#10162d'))}</code>)"
+
     text = (
-        progress(3, "Review") + "<b>📋 Ready to build</b>\n\n"
+        progress(4, "Review") + "<b>📋 Ready to build</b>\n\n"
         f"📛 <b>Name:</b> {safe_name(session['app_name'])}\n"
         f"{source_info}\n"
+        f"🎨 <b>Toolbar:</b> {toolbar_info}\n"
         f"🖼️ <b>Icon:</b> <code>{escape(icon_name)}</code> ({len(icon_bytes):,} bytes)\n\n"
         "Everything looks good. Start the build?"
     )
@@ -510,6 +527,13 @@ def build_apk(chat_id):
     is_url = session.get("is_url", False)
     
     data = {"app_name": app_name}
+    
+    # টুলবার কনফিগারেশন যোগ করা (যদি ইউজার দিয়ে থাকে)
+    if "toolbar_title" in session:
+        data["toolbar_title"] = session["toolbar_title"]
+    if "toolbar_color" in session:
+        data["toolbar_color"] = session["toolbar_color"]
+
     files = None
     
     if is_url:
